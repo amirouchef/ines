@@ -3,62 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dental History Score Tracker</title>
+    <title>Dental History Score</title>
     <style>
-        body {
+        * {
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
             font-family: 'Georgia', serif;
-            background-color: #F5E6D3;
+            background-color: transparent;
+            overflow: hidden;
+        }
+        
+        .score-banner {
+            background: linear-gradient(135deg, #8B6F47 0%, #5C4A2F 100%);
+            padding: 8px 20px;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
-            min-height: 100vh;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            border-bottom: 3px solid #3D2F1F;
+            min-height: 50px;
+            max-height: 50px;
         }
         
-        .score-container {
-            background-color: #8B6F47;
-            padding: 30px 50px;
-            border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-            text-align: center;
-            border: 3px solid #5C4A2F;
-        }
-        
-        .score-title {
-            color: #F5E6D3;
-            font-size: 24px;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        
-        .score-display {
-            font-size: 72px;
-            font-weight: bold;
-            color: #FFD700;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            margin: 20px 0;
-        }
-        
-        .buttons-container {
-            margin-top: 30px;
+        .score-section {
             display: flex;
-            gap: 15px;
-            justify-content: center;
+            align-items: center;
+            gap: 12px;
         }
         
-        button {
-            padding: 15px 30px;
-            font-size: 18px;
-            font-family: 'Georgia', serif;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .score-label {
+            color: #F5E6D3;
+            font-size: 14px;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 1px;
+        }
+        
+        .score-display {
+            background-color: #3D2F1F;
+            color: #FFD700;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 4px 16px;
+            border-radius: 20px;
+            min-width: 50px;
+            text-align: center;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .buttons-section {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        button {
+            padding: 6px 14px;
+            font-size: 13px;
+            font-family: 'Georgia', serif;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
         }
         
         .btn-correct {
@@ -68,7 +89,6 @@
         
         .btn-correct:hover {
             background-color: #45a049;
-            transform: scale(1.05);
         }
         
         .btn-wrong {
@@ -78,49 +98,59 @@
         
         .btn-wrong:hover {
             background-color: #da190b;
-            transform: scale(1.05);
         }
         
         .btn-reset {
-            background-color: #888;
+            background-color: #666;
             color: white;
-            padding: 10px 20px;
-            font-size: 14px;
+            padding: 6px 12px;
+            font-size: 12px;
         }
         
         .btn-reset:hover {
-            background-color: #666;
+            background-color: #555;
         }
         
-        .feedback {
-            margin-top: 20px;
-            font-size: 18px;
-            color: #5C4A2F;
-            min-height: 25px;
-            font-style: italic;
+        .icon {
+            font-size: 16px;
+            margin-right: 4px;
+        }
+        
+        /* Animation pour le feedback */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .pulse {
+            animation: pulse 0.3s ease;
         }
     </style>
 </head>
 <body>
-    <div class="score-container">
-        <div class="score-title">🦷 Dental History Quiz 🦷</div>
-        <div class="score-title">Your Score</div>
-        <div class="score-display" id="scoreDisplay">0</div>
-        
-        <div class="buttons-container">
-            <button class="btn-correct" onclick="addPoint()">✓ Correct Answer</button>
-            <button class="btn-wrong" onclick="subtractPoint()">✗ Wrong Answer</button>
+    <div class="score-banner">
+        <div class="score-section">
+            <span class="score-label">🦷 Score</span>
+            <div class="score-display" id="scoreDisplay">0</div>
         </div>
         
-        <div class="feedback" id="feedback"></div>
-        
-        <button class="btn-reset" onclick="resetScore()">Reset Score</button>
+        <div class="buttons-section">
+            <button class="btn-correct" onclick="addPoint()" title="Correct Answer">
+                <span class="icon">✓</span>+1
+            </button>
+            <button class="btn-wrong" onclick="subtractPoint()" title="Wrong Answer">
+                <span class="icon">✗</span>-1
+            </button>
+            <button class="btn-reset" onclick="resetScore()" title="Reset Score">
+                ↺
+            </button>
+        </div>
     </div>
 
     <script>
         let score = 0;
         
-        // Charger le score depuis localStorage
+        // Charger le score depuis localStorage au chargement
         window.onload = function() {
             const savedScore = localStorage.getItem('dentalQuizScore');
             if (savedScore !== null) {
@@ -130,38 +160,45 @@
         };
         
         function updateDisplay() {
-            document.getElementById('scoreDisplay').textContent = score;
+            const displayElement = document.getElementById('scoreDisplay');
+            displayElement.textContent = score;
             localStorage.setItem('dentalQuizScore', score);
+            
+            // Animation pulse
+            displayElement.classList.remove('pulse');
+            void displayElement.offsetWidth; // Force reflow
+            displayElement.classList.add('pulse');
         }
         
         function addPoint() {
             score += 1;
             updateDisplay();
-            showFeedback('Great! Keep going! 🎉', '#4CAF50');
+            flashButton('correct');
         }
         
         function subtractPoint() {
             score -= 1;
             updateDisplay();
-            showFeedback('Oops! Learn and try again! 💪', '#f44336');
+            flashButton('wrong');
         }
         
         function resetScore() {
-            if (confirm('Are you sure you want to reset your score?')) {
+            if (confirm('Reset score to 0?')) {
                 score = 0;
                 updateDisplay();
-                showFeedback('Score reset. Good luck! 🍀', '#888');
             }
         }
         
-        function showFeedback(message, color) {
-            const feedback = document.getElementById('feedback');
-            feedback.textContent = message;
-            feedback.style.color = color;
+        function flashButton(type) {
+            // Effet visuel optionnel lors du clic
+            const btn = type === 'correct' ? 
+                document.querySelector('.btn-correct') : 
+                document.querySelector('.btn-wrong');
             
+            btn.style.transform = 'scale(0.95)';
             setTimeout(() => {
-                feedback.textContent = '';
-            }, 2000);
+                btn.style.transform = 'scale(1)';
+            }, 100);
         }
     </script>
 </body>
