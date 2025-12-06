@@ -1,263 +1,102 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dental History Score</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Georgia', serif;
-            background-color: transparent;
-            overflow: hidden;
-        }
-        
-        .score-banner {
-            background: linear-gradient(135deg, #8B6F47 0%, #5C4A2F 100%);
-            padding: 8px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            border-bottom: 3px solid #3D2F1F;
-            min-height: 50px;
-            max-height: 50px;
-        }
-        
-        .score-section {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .score-label {
-            color: #F5E6D3;
-            font-size: 14px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .score-display {
-            background-color: #3D2F1F;
-            color: #FFD700;
-            font-size: 24px;
-            font-weight: bold;
-            padding: 4px 16px;
-            border-radius: 20px;
-            min-width: 50px;
-            text-align: center;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
-        }
-        
-        .buttons-section {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        
-        button {
-            padding: 6px 14px;
-            font-size: 13px;
-            font-family: 'Georgia', serif;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        .btn-correct {
-            background-color: #4CAF50;
-            color: white;
-        }
-        
-        .btn-correct:hover {
-            background-color: #45a049;
-        }
-        
-        .btn-wrong {
-            background-color: #f44336;
-            color: white;
-        }
-        
-        .btn-wrong:hover {
-            background-color: #da190b;
-        }
-        
-        .btn-reset {
-            background-color: #666;
-            color: white;
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-        
-        .btn-reset:hover {
-            background-color: #555;
-        }
-        
-        .icon {
-            font-size: 16px;
-            margin-right: 4px;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        
-        .pulse {
-            animation: pulse 0.3s ease;
-        }
-    </style>
-</head>
-<body>
-    <div class="score-banner">
-        <div class="score-section">
-            <span class="score-label">🦷 Score</span>
-            <div class="score-display" id="scoreDisplay">0</div>
-        </div>
-        
-        <!-- Les boutons peuvent rester pour debug, 
-             tu peux supprimer tout le bloc .buttons-section si tu n'en as plus besoin -->
-        <div class="buttons-section">
-            <button class="btn-correct" onclick="addPoint()" title="Correct Answer">
-                <span class="icon">✓</span>+1
-            </button>
-            <button class="btn-wrong" onclick="subtractPoint()" title="Wrong Answer">
-                <span class="icon">✗</span>-1
-            </button>
-            <button class="btn-reset" onclick="resetScore()" title="Reset Score">
-                ↺
-            </button>
-        </div>
-    </div>
+<script>
+    let score = 0;
+    const ERROR_SLIDES = [8, 15, 22];
 
-    <script>
-        let score = 0;
+    // Récupération d'un paramètre d'URL
+    function getQueryParam(name) {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(name);
+    }
 
-        // Récupération paramètre d'URL
-        function getQueryParam(name) {
-            const params = new URLSearchParams(window.location.search);
-            return params.get(name);
-        }
+    // Met à jour l'affichage + enregistre le score
+    function updateDisplay() {
+        const displayElement = document.getElementById('scoreDisplay');
+        displayElement.textContent = score;
+        localStorage.setItem('dentalQuizScore', score);
 
-        // Met à jour l'affichage + enregistre dans localStorage
-        function updateDisplay() {
-            const displayElement = document.getElementById('scoreDisplay');
-            displayElement.textContent = score;
-            localStorage.setItem('dentalQuizScore', score);
-            
-            displayElement.classList.remove('pulse');
-            void displayElement.offsetWidth; 
-            displayElement.classList.add('pulse');
-        }
+        // Animation pulse
+        displayElement.classList.remove('pulse');
+        void displayElement.offsetWidth; // Force reflow
+        displayElement.classList.add('pulse');
+    }
 
-        function applySlideLogic() {
-            const slideParam = getQueryParam('slide');
-            const type = getQueryParam('type'); // "normal" ou "error"
+    // Affichage initial (sans modifier le score)
+    function initDisplay() {
+        const displayElement = document.getElementById('scoreDisplay');
+        displayElement.textContent = score;
+    }
 
-            if (!slideParam) return;
+    // Logique liée au numéro de diapo
+    function applySlideLogic() {
+        const slideParam = getQueryParam('slide');
+        const type = getQueryParam('type'); // "normal", "error" ou "none"
 
-            const slide = parseInt(slideParam, 10);
-            if (isNaN(slide)) return;
+        if (!slideParam) return;
 
-            const errorSlides = [8, 15, 22];
+        const slide = parseInt(slideParam, 10);
+        if (isNaN(slide)) return;
 
-            let lastSlide = parseInt(localStorage.getItem('dentalQuizLastSlide'), 10);
-            if (isNaN(lastSlide)) {
-                lastSlide = null;
-            }
+        let oldScore = score;
 
-            let oldScore = score;
-
-            // Si on est sur une page d'erreur (8,15,22) → -1 à chaque fois
-            if (type === 'error' && errorSlides.includes(slide)) {
-                score -= 1;
-            } else if (type === 'normal') {
-                // Incrément si on avance
-                if (lastSlide === null) {
-                    // Première diapo "normale" visitée
-                    score += 1;
-                } else if (slide > lastSlide) {
-                    // On avance de plusieurs diapos : on ajoute la différence
-                    score += (slide - lastSlide);
-                }
-            }
-
-            // Mémoriser le dernier numéro de diapo atteint
-            localStorage.setItem('dentalQuizLastSlide', slide);
-
-            if (score !== oldScore) {
-                updateDisplay();
-            } else {
-                // Si le score n'a pas changé, on met quand même à jour l'affichage initial
-                const displayElement = document.getElementById('scoreDisplay');
-                displayElement.textContent = score;
-            }
-        }
-
-        // Chargement initial
-        window.onload = function() {
-            const savedScore = localStorage.getItem('dentalQuizScore');
-            if (savedScore !== null) {
-                score = parseInt(savedScore, 10) || 0;
-            }
-            // Affichage initial
-            const displayElement = document.getElementById('scoreDisplay');
-            displayElement.textContent = score;
-
-            // Appliquer la logique liée à la diapo
-            applySlideLogic();
-        };
-        
-        // Fonctions boutons (optionnelles)
-        function addPoint() {
-            score += 1;
-            updateDisplay();
-            flashButton('correct');
-        }
-        
-        function subtractPoint() {
+        if (type === 'error' && ERROR_SLIDES.includes(slide)) {
+            // À chaque fois qu'on arrive sur 8, 15 ou 22 → -1
             score -= 1;
-            updateDisplay();
-            flashButton('wrong');
-        }
-        
-        function resetScore() {
-            if (confirm('Reset score to 0?')) {
-                score = 0;
-                localStorage.setItem('dentalQuizLastSlide', '');
-                updateDisplay();
+        } else if (type === 'normal') {
+            // On n'incrémente QUE si on atteint une diapo au numéro plus grand qu'avant
+            let maxSlide = parseInt(localStorage.getItem('dentalQuizMaxSlide') || '0', 10);
+
+            if (slide > maxSlide) {
+                score += 1; // +1 pour cette nouvelle étape atteinte
+                maxSlide = slide;
+                localStorage.setItem('dentalQuizMaxSlide', String(maxSlide));
             }
         }
-        
-        function flashButton(type) {
-            const btn = type === 'correct' ? 
-                document.querySelector('.btn-correct') : 
-                document.querySelector('.btn-wrong');
-            
-            if (!btn) return;
-            btn.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                btn.style.transform = 'scale(1)';
-            }, 100);
+
+        if (score !== oldScore) {
+            updateDisplay();
         }
-    </script>
-</body>
-</html>
+    }
+
+    // Chargement initial
+    window.onload = function() {
+        const savedScore = localStorage.getItem('dentalQuizScore');
+        if (savedScore !== null) {
+            score = parseInt(savedScore, 10) || 0;
+        }
+        initDisplay();
+        applySlideLogic();
+    };
+
+    // Boutons manuels (tu peux les laisser pour debug ou les enlever du HTML)
+    function addPoint() {
+        score += 1;
+        updateDisplay();
+        flashButton('correct');
+    }
+
+    function subtractPoint() {
+        score -= 1;
+        updateDisplay();
+        flashButton('wrong');
+    }
+
+    function resetScore() {
+        if (confirm('Reset score to 0?')) {
+            score = 0;
+            localStorage.setItem('dentalQuizMaxSlide', '0');
+            updateDisplay();
+        }
+    }
+
+    function flashButton(type) {
+        const btn = type === 'correct' ?
+            document.querySelector('.btn-correct') :
+            document.querySelector('.btn-wrong');
+
+        if (!btn) return;
+        btn.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            btn.style.transform = 'scale(1)';
+        }, 100);
+    }
+</script>
