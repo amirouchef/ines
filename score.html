@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dental History Score Tracker</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Georgia', serif;
+            background-color: #F5E6D3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .score-container {
+            background-color: #8B6F47;
+            padding: 30px 50px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            text-align: center;
+            border: 3px solid #5C4A2F;
+        }
+        
+        .score-title {
+            color: #F5E6D3;
+            font-size: 24px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .score-display {
+            font-size: 72px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin: 20px 0;
+        }
+        
+        .buttons-container {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            font-family: 'Georgia', serif;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn-correct {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .btn-correct:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+        
+        .btn-wrong {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .btn-wrong:hover {
+            background-color: #da190b;
+            transform: scale(1.05);
+        }
+        
+        .btn-reset {
+            background-color: #888;
+            color: white;
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+        
+        .btn-reset:hover {
+            background-color: #666;
+        }
+        
+        .feedback {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #5C4A2F;
+            min-height: 25px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="score-container">
+        <div class="score-title">🦷 Dental History Quiz 🦷</div>
+        <div class="score-title">Your Score</div>
+        <div class="score-display" id="scoreDisplay">0</div>
+        
+        <div class="buttons-container">
+            <button class="btn-correct" onclick="addPoint()">✓ Correct Answer</button>
+            <button class="btn-wrong" onclick="subtractPoint()">✗ Wrong Answer</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+        
+        <button class="btn-reset" onclick="resetScore()">Reset Score</button>
+    </div>
+
+    <script>
+        let score = 0;
+        
+        // Charger le score depuis localStorage
+        window.onload = function() {
+            const savedScore = localStorage.getItem('dentalQuizScore');
+            if (savedScore !== null) {
+                score = parseInt(savedScore);
+                updateDisplay();
+            }
+        };
+        
+        function updateDisplay() {
+            document.getElementById('scoreDisplay').textContent = score;
+            localStorage.setItem('dentalQuizScore', score);
+        }
+        
+        function addPoint() {
+            score += 1;
+            updateDisplay();
+            showFeedback('Great! Keep going! 🎉', '#4CAF50');
+        }
+        
+        function subtractPoint() {
+            score -= 1;
+            updateDisplay();
+            showFeedback('Oops! Learn and try again! 💪', '#f44336');
+        }
+        
+        function resetScore() {
+            if (confirm('Are you sure you want to reset your score?')) {
+                score = 0;
+                updateDisplay();
+                showFeedback('Score reset. Good luck! 🍀', '#888');
+            }
+        }
+        
+        function showFeedback(message, color) {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = message;
+            feedback.style.color = color;
+            
+            setTimeout(() => {
+                feedback.textContent = '';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
