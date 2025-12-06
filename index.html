@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -30,13 +29,26 @@
             max-height: 50px;
         }
         
+        .left-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
         .score-section {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
         }
         
-        .score-label {
+        .timer-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .score-label,
+        .timer-label {
             color: #F5E6D3;
             font-size: 14px;
             font-weight: bold;
@@ -54,6 +66,19 @@
             min-width: 50px;
             text-align: center;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .timer-display {
+            background-color: #3D2F1F;
+            color: #F5E6D3;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 4px 12px;
+            border-radius: 20px;
+            min-width: 70px;
+            text-align: center;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+            font-variant-numeric: tabular-nums;
         }
         
         .buttons-section {
@@ -129,13 +154,19 @@
 </head>
 <body>
     <div class="score-banner">
-        <div class="score-section">
-            <span class="score-label">🦷 Score</span>
-            <div class="score-display" id="scoreDisplay">0</div>
+        <div class="left-section">
+            <div class="score-section">
+                <span class="score-label">🦷 Score</span>
+                <div class="score-display" id="scoreDisplay">0</div>
+            </div>
+
+            <div class="timer-section">
+                <span class="timer-label">⏱ Temps</span>
+                <div class="timer-display" id="timerDisplay">00:00</div>
+            </div>
         </div>
         
-        <!-- Les boutons peuvent rester pour debug, 
-             tu peux supprimer tout le bloc .buttons-section si tu n'en as plus besoin -->
+        <!-- Boutons manuels (debug). Tu peux les enlever si tu ne les veux plus -->
         <div class="buttons-section">
             <button class="btn-correct" onclick="addPoint()" title="Correct Answer">
                 <span class="icon">✓</span>+1
@@ -143,112 +174,206 @@
             <button class="btn-wrong" onclick="subtractPoint()" title="Wrong Answer">
                 <span class="icon">✗</span>-1
             </button>
-            <button class="btn-reset" onclick="resetScore()" title="Reset Score">
+            <button class="btn-reset" onclick="resetAll()" title="Reset Score & Timer">
                 ↺
             </button>
         </div>
     </div>
-<script>
-    let score = 0;
-    const ERROR_SLIDES = [8, 15, 22];
 
-    // Récupération d'un paramètre d'URL
-    function getQueryParam(name) {
-        const params = new URLSearchParams(window.location.search);
-        return params.get(name);
-    }
+    <script>
+        let score = 0;
+        const ERROR_SLIDES = [8, 15, 22];
 
-    // Met à jour l'affichage + enregistre le score
-    function updateDisplay() {
-        const displayElement = document.getElementById('scoreDisplay');
-        displayElement.textContent = score;
-        localStorage.setItem('dentalQuizScore', score);
+        let timerInterval = null;
 
-        // Animation pulse
-        displayElement.classList.remove('pulse');
-        void displayElement.offsetWidth; // Force reflow
-        displayElement.classList.add('pulse');
-    }
+        // --------- UTILS URL ---------
+        function getQueryParam(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
 
-    // Affichage initial (sans modifier le score)
-    function initDisplay() {
-        const displayElement = document.getElementById('scoreDisplay');
-        displayElement.textContent = score;
-    }
+        // --------- SCORE ---------
+        function updateScoreDisplay() {
+            const displayElement = document.getElementById('scoreDisplay');
+            displayElement.textContent = score;
+            localStorage.setItem('dentalQuizScore', score);
 
-    // Logique liée au numéro de diapo
-    function applySlideLogic() {
-        const slideParam = getQueryParam('slide');
-        const type = getQueryParam('type'); // "normal", "error" ou "none"
+            displayElement.classList.remove('pulse');
+            void displayElement.offsetWidth;
+            displayElement.classList.add('pulse');
+        }
 
-        if (!slideParam) return;
+        function initScoreDisplay() {
+            const displayElement = document.getElementById('scoreDisplay');
+            displayElement.textContent = score;
+        }
 
-        const slide = parseInt(slideParam, 10);
-        if (isNaN(slide)) return;
+        function applySlideScoreLogic() {
+            const slideParam = getQueryParam('slide');
+            const type = getQueryParam('type'); // "normal", "error", "none"...
 
-        let oldScore = score;
+            if (!slideParam) return;
 
-        if (type === 'error' && ERROR_SLIDES.includes(slide)) {
-            // À chaque fois qu'on arrive sur 8, 15 ou 22 → -1
-            score -= 1;
-        } else if (type === 'normal') {
-            // On n'incrémente QUE si on atteint une diapo au numéro plus grand qu'avant
-            let maxSlide = parseInt(localStorage.getItem('dentalQuizMaxSlide') || '0', 10);
+            const slide = parseInt(slideParam, 10);
+            if (isNaN(slide)) return;
 
-            if (slide > maxSlide) {
-                score += 1; // +1 pour cette nouvelle étape atteinte
-                maxSlide = slide;
-                localStorage.setItem('dentalQuizMaxSlide', String(maxSlide));
+            let oldScore = score;
+
+            if (type === 'error' && ERROR_SLIDES.includes(slide)) {
+                // À chaque arrivée sur 8,15,22 → -1
+                score -= 1;
+            } else if (type === 'normal') {
+                // +1 seulement quand on dépasse la plus grande diapo déjà visitée
+                let maxSlide = parseInt(localStorage.getItem('dentalQuizMaxSlide') || '0', 10);
+                if (slide > maxSlide) {
+                    score += 1;
+                    maxSlide = slide;
+                    localStorage.setItem('dentalQuizMaxSlide', String(maxSlide));
+                }
+            }
+
+            if (score !== oldScore) {
+                updateScoreDisplay();
             }
         }
 
-        if (score !== oldScore) {
-            updateDisplay();
+        function addPoint() {
+            score += 1;
+            updateScoreDisplay();
+            flashButton('correct');
         }
-    }
 
-    // Chargement initial
-    window.onload = function() {
-        const savedScore = localStorage.getItem('dentalQuizScore');
-        if (savedScore !== null) {
-            score = parseInt(savedScore, 10) || 0;
+        function subtractPoint() {
+            score -= 1;
+            updateScoreDisplay();
+            flashButton('wrong');
         }
-        initDisplay();
-        applySlideLogic();
-    };
 
-    // Boutons manuels (tu peux les laisser pour debug ou les enlever du HTML)
-    function addPoint() {
-        score += 1;
-        updateDisplay();
-        flashButton('correct');
-    }
-
-    function subtractPoint() {
-        score -= 1;
-        updateDisplay();
-        flashButton('wrong');
-    }
-
-    function resetScore() {
-        if (confirm('Reset score to 0?')) {
-            score = 0;
-            localStorage.setItem('dentalQuizMaxSlide', '0');
-            updateDisplay();
+        // --------- TIMER ---------
+        function formatTime(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            const mm = String(minutes).padStart(2, '0');
+            const ss = String(seconds).padStart(2, '0');
+            return `${mm}:${ss}`;
         }
-    }
 
-    function flashButton(type) {
-        const btn = type === 'correct' ?
-            document.querySelector('.btn-correct') :
-            document.querySelector('.btn-wrong');
+        function getElapsedMs() {
+            const start = parseInt(localStorage.getItem('dentalQuizTimerStart') || '0', 10);
+            if (!start) return 0;
 
-        if (!btn) return;
-        btn.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            btn.style.transform = 'scale(1)';
-        }, 100);
-    }
-</script>
+            const end = parseInt(localStorage.getItem('dentalQuizTimerEnd') || '0', 10);
+            const now = Date.now();
+            const effectiveEnd = end > 0 ? end : now;
+            return Math.max(0, effectiveEnd - start);
+        }
+
+        function updateTimerDisplay() {
+            const display = document.getElementById('timerDisplay');
+            const elapsed = getElapsedMs();
+            display.textContent = formatTime(elapsed);
+        }
+
+        function startTimer() {
+            // Si pas encore de start, on l'initialise
+            let start = parseInt(localStorage.getItem('dentalQuizTimerStart') || '0', 10);
+            localStorage.removeItem('dentalQuizTimerEnd');
+
+            if (!start) {
+                start = Date.now();
+                localStorage.setItem('dentalQuizTimerStart', String(start));
+            }
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimerDisplay, 1000);
+            updateTimerDisplay();
+        }
+
+        function stopTimer() {
+            const start = parseInt(localStorage.getItem('dentalQuizTimerStart') || '0', 10);
+            if (!start) return;
+            localStorage.setItem('dentalQuizTimerEnd', String(Date.now()));
+            if (timerInterval) clearInterval(timerInterval);
+            updateTimerDisplay();
+        }
+
+        function resetTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            localStorage.removeItem('dentalQuizTimerStart');
+            localStorage.removeItem('dentalQuizTimerEnd');
+            const display = document.getElementById('timerDisplay');
+            display.textContent = '00:00';
+        }
+
+        function applyTimerLogic() {
+            const timerParam = getQueryParam('timer'); // "start", "stop", "reset" ou rien
+
+            if (timerParam === 'reset') {
+                resetTimer();
+                return;
+            }
+
+            if (timerParam === 'start') {
+                startTimer();
+                return;
+            }
+
+            if (timerParam === 'stop') {
+                stopTimer();
+                return;
+            }
+
+            // Si on a déjà un start et pas d'end → on continue l'affichage
+            const start = parseInt(localStorage.getItem('dentalQuizTimerStart') || '0', 10);
+            const end = parseInt(localStorage.getItem('dentalQuizTimerEnd') || '0', 10);
+
+            if (start && !end) {
+                // Timer en cours : on reprend le décompte
+                if (timerInterval) clearInterval(timerInterval);
+                timerInterval = setInterval(updateTimerDisplay, 1000);
+            }
+
+            updateTimerDisplay();
+        }
+
+        // --------- GLOBAL RESET ---------
+        function resetAll() {
+            if (confirm('Réinitialiser le score et le chrono ?')) {
+                score = 0;
+                localStorage.setItem('dentalQuizScore', '0');
+                localStorage.setItem('dentalQuizMaxSlide', '0');
+                updateScoreDisplay();
+                resetTimer();
+            }
+        }
+
+        // --------- EFFET BOUTONS ---------
+        function flashButton(type) {
+            const btn = type === 'correct' ?
+                document.querySelector('.btn-correct') :
+                document.querySelector('.btn-wrong');
+
+            if (!btn) return;
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                btn.style.transform = 'scale(1)';
+            }, 100);
+        }
+
+        // --------- ONLOAD ---------
+        window.onload = function() {
+            // Score
+            const savedScore = localStorage.getItem('dentalQuizScore');
+            if (savedScore !== null) {
+                score = parseInt(savedScore, 10) || 0;
+            }
+            initScoreDisplay();
+            applySlideScoreLogic();
+
+            // Timer
+            applyTimerLogic();
+        };
+    </script>
 </body>
 </html>
